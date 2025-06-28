@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía Interactiva de Skopje</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals (Stone, Terracotta, Teal) -->
+    <!-- Application Structure Plan: A tab-based SPA dividing content into "Esta Noche" and "Excursión de un Día". "Esta Noche" features interactive filters for dining/nightlife recommendations. "Excursión de un Día" uses a vertical timeline for navigation. This structure organizes the chronological information into user-controlled, task-oriented views, making it more digestible and engaging than a linear document. -->
+    <!-- Visualization & Content Choices: Evening spots: (Organize) -> Filterable cards (HTML/JS) for user-driven exploration. Day plan: (Organize/Inform) -> Interactive timeline (HTML/JS) to show progression. Day's composition: (Summarize) -> Donut chart (Chart.js) for a quick visual summary. Practical info: (Inform) -> Collapsible section (HTML/JS) to avoid clutter. All choices prioritize interactivity and clarity without complex graphics. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-active {
+            border-color: #0d9488; /* teal-600 */
+            color: #0f766e; /* teal-700 */
+            background-color: #f0fdfa; /* teal-50 */
+        }
+        .filter-active {
+            background-color: #0d9488; /* teal-600 */
+            color: white;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -31px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: white;
+            border: 4px solid #0d9488; /* teal-600 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 640px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+
+    <div class="container mx-auto max-w-5xl p-4 sm:p-6 lg:p-8">
+
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-teal-800">Guía Interactiva de Skopje</h1>
+            <p class="text-lg text-stone-600 mt-2">Tu aventura de 24 horas desde el Mikitos Hostel</p>
+        </header>
+
+        <nav class="flex justify-center border-b-2 border-stone-200 mb-8">
+            <button id="tab-noche" class="tab-btn px-6 py-3 text-lg font-medium border-b-4 tab-active">Esta Noche</button>
+            <button id="tab-dia" class="tab-btn px-6 py-3 text-lg font-medium border-b-4 border-transparent text-stone-500 hover:text-teal-600">Mañana</button>
+        </nav>
+
+        <main>
+            <section id="content-noche">
+                <div class="text-center mb-8">
+                     <h2 class="text-3xl font-bold mb-2">Planes para Esta Noche</h2>
+                     <p class="text-stone-600 max-w-3xl mx-auto">La noche en Skopje ofrece una excelente mezcla de sabores locales y ambientes animados. Desde el céntrico Mikitos Hostel, tienes a tu alcance las mejores opciones. Utiliza los filtros para encontrar la recomendación perfecta para tu cena y para después.</p>
+                </div>
+
+                <div id="noche-container" class="space-y-12">
+                    <div>
+                        <h3 class="text-2xl font-bold mb-4 text-center">🍽️ Recomendaciones para la Cena</h3>
+                        <div id="dinner-filters" class="flex justify-center gap-2 mb-6 flex-wrap">
+                            <button class="filter-btn-dinner px-4 py-2 rounded-full border border-stone-300 hover:bg-teal-100 transition filter-active" data-filter="all">Todas</button>
+                            <button class="filter-btn-dinner px-4 py-2 rounded-full border border-stone-300 hover:bg-teal-100 transition" data-filter="tradicional">Tradicional</button>
+                            <button class="filter-btn-dinner px-4 py-2 rounded-full border border-stone-300 hover:bg-teal-100 transition" data-filter="moderna">Moderna/Fusión</button>
+                        </div>
+                        <div id="dinner-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-2xl font-bold mb-4 text-center">🍻 Vida Nocturna y Bares</h3>
+                        <div id="nightlife-filters" class="flex justify-center gap-2 mb-6 flex-wrap">
+                            <button class="filter-btn-nightlife px-4 py-2 rounded-full border border-stone-300 hover:bg-teal-100 transition filter-active" data-filter="all">Todos</button>
+                            <button class="filter-btn-nightlife px-4 py-2 rounded-full border border-stone-300 hover:bg-teal-100 transition" data-filter="animado">Animado</button>
+                            <button class="filter-btn-nightlife px-4 py-2 rounded-full border border-stone-300 hover:bg-teal-100 transition" data-filter="local">Sabor Local</button>
+                            <button class="filter-btn-nightlife px-4 py-2 rounded-full border border-stone-300 hover:bg-teal-100 transition" data-filter="relajado">Relajado</button>
+                        </div>
+                        <div id="nightlife-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="content-dia" class="hidden">
+                 <div class="text-center mb-12">
+                     <h2 class="text-3xl font-bold mb-2">Aventura Urbana de Mañana</h2>
+                     <p class="text-stone-600 max-w-3xl mx-auto">Mañana te espera un viaje fascinante a través de la historia y el presente de Skopje. El contraste entre el Antiguo Bazar otomano y el centro neoclásico es una experiencia única. Sigue esta línea de tiempo para descubrir los tesoros de la ciudad, todos accesibles a pie desde tu hostel.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                    <div class="lg:col-span-3">
+                        <div class="relative pl-8 border-l-2 border-stone-200" id="timeline-container">
+                        </div>
+                        <div class="text-center mt-8">
+                            <button id="generate-route-btn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-300">
+                                Generar Ruta Completa (a pie)
+                            </button>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2">
+                         <div class="bg-white p-6 rounded-lg shadow-lg sticky top-8">
+                            <h3 class="text-xl font-bold text-center mb-4">Composición del Día</h3>
+                            <div class="chart-container">
+                                <canvas id="day-chart"></canvas>
+                            </div>
+                            <p class="text-center text-sm text-stone-500 mt-4">Un resumen visual del tiempo que dedicarás a cada tipo de actividad durante tu excursión de un día.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+
+        <footer class="mt-12 pt-8 border-t-2 border-stone-200">
+            <div id="tips-accordion">
+                <button id="tips-header" class="w-full flex justify-between items-center text-left py-4">
+                    <h2 class="text-2xl font-bold">Consejos Importantes para tu Estancia</h2>
+                    <span id="tips-icon" class="text-2xl font-bold transform transition-transform duration-300">-</span>
+                </button>
+                <div id="tips-content" class="overflow-hidden transition-all duration-500 ease-in-out">
+                    <div class="pt-4 pb-2 space-y-4 text-stone-700">
+                        <p><strong>📍 Transporte:</strong> El centro de Skopje es muy caminable desde el Mikitos Hostel. Para destinos más lejanos como el Cañón de Matka, puedes usar taxis o unirte a una excursión organizada.</p>
+                        <p><strong>💰 Moneda y Pagos:</strong> La moneda es el denar macedonio (MKD). Aunque el efectivo es útil, las tarjetas son aceptadas en muchos lugares. En el hostel se acepta efectivo.</p>
+                        <p><strong>🗣️ Idioma:</strong> El idioma oficial es el macedonio. En zonas turísticas, restaurantes y bares, mucha gente habla inglés.</p>
+                        <p><strong>🏨 Hostel:</strong> Recuerda los horarios de check-in (15:00-00:00) y check-out (07:00-11:00). Hay taquillas disponibles (trae tu propio candado) y ¡disfruta del café gratis por la mañana!</p>
+                    </div>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    const mikitosHostelAddress = 'Filip Vtori Makedonski 9 Floor 5, Skopje, North Macedonia';
+    let selectedDayOption = 'a'; // Default to Option A for the afternoon
+
+    const dinnerData = [
+        { name: 'Skopski Merak', category: 'tradicional', mood: 'Animado, tradicional', highlight: 'Exquisitos platos de carne, a menudo con música en vivo.', neighborhood: 'Debar Maalo' },
+        { name: 'Old House (Stara Kuka)', category: 'tradicional', mood: 'Encanto del viejo mundo, tranquilo', highlight: 'Prueba el tavče gravče en su hermosa terraza jardín.', neighborhood: 'Centro' },
+        { name: 'Kaj Serdarot', category: 'tradicional', mood: 'Cálido, acogedor', highlight: 'Populares platos locales en el corazón de Debar Maalo.', neighborhood: 'Debar Maalo' },
+        { name: 'Distrikt Bar & Kitchen', category: 'moderna', mood: 'Moderno, de moda', highlight: 'Cocina de fusión innovadora en un ambiente elegante.', neighborhood: 'Centro' },
+        { name: 'Dal Met Fu', category: 'moderna', mood: 'Elegante, íntimo', highlight: 'Exquisita fusión de cocina italiana y macedonia.', neighborhood: 'Centro' },
+        { name: 'Vodenica Mulino', category: 'moderna', mood: 'Romántico, junto al río', highlight: 'Famoso por sus mariscos y el risotto con tinta de calamar.', neighborhood: 'Junto al río Vardar' },
+    ];
+
+    const nightlifeData = [
+        { name: 'Van Gogh Bar', category: 'animado', mood: 'Moderno, artístico', highlight: 'Un punto de encuentro popular para artistas y locales.', neighborhood: 'Centro' },
+        { name: 'Drunken Monkeys', category: 'animado', mood: 'Buen humor, buena música', highlight: 'Gran ambiente y buena selección de cervezas.', neighborhood: 'Centro' },
+        { name: 'Bruklinski Jazz Bistro', category: 'animado', mood: 'Ambiente de jazz, acogedor', highlight: 'Perfecto para amantes del jazz en vivo.', neighborhood: 'Debar Maalo' },
+        { name: 'Irish Pub St. Patrick', category: 'animado', mood: 'Clásico, animado', highlight: 'Guinness de calidad, comida y música en vivo.', neighborhood: 'Centro' },
+        { name: 'Rakija Bar Kaldrma', category: 'local', mood: 'Rústico, auténtico', highlight: 'El primer bar de rakija de Skopje, con más de 30 variedades.', neighborhood: 'Antiguo Bazar' },
+        { name: 'Beertija Pub', category: 'local', mood: 'Único, alternativo', highlight: 'Gran selección de cervezas y música en vivo en un sótano.', neighborhood: 'City Trade Center' },
+        { name: 'Chillin\' Bar', category: 'relajado', mood: 'Elegante, cómodo', highlight: 'Como su nombre indica, ideal para una noche tranquila.', neighborhood: 'Centro' },
+        { name: 'Nano Bar', category: 'relajado', mood: 'Acogedor, amable', highlight: 'Con cómodos asientos al aire libre en Debar Maalo.', neighborhood: 'Debar Maalo' },
+    ];
+
+    const dayTripData = [
+        {
+            time: "Mañana",
+            hours: "9:00 - 13:00",
+            title: "El Corazón Histórico",
+            content: "Comienza tu día sumergiéndote en la rica historia de Skopje. Esta zona es un laberinto de calles otomanas, antiguas fortalezas y museos que narran el pasado de la nación.",
+            attractions: [
+                { name: "Antiguo Bazar (Stara Charshiya)", address: "Old Bazaar, Skopje", desc: "Piérdete en uno de los mercados más antiguos de los Balcanes. Disfruta de la atmósfera otomana, sus cafés y tiendas." },
+                { name: "Fortaleza de Kale", address: "Skopje Fortress, Skopje", desc: "Sube a la fortaleza para disfrutar de vistas panorámicas de la ciudad. La entrada es gratuita." },
+                { name: "Museo de la Lucha Macedonia", address: "Museum of Macedonian Struggle, Skopje", desc: "Cerca del bazar encontrarás el Museo de la Lucha Macedonia y el Museo del Holocausto. (Verifica si el Museo de Macedonia está abierto)." },
+                { name: "Holocaust-Museum der Juden Mazedoniens", address: "Holocaust Memorial Center for the Jews of Macedonia, Skopje", desc: "Frente a la Plaza Felipe II." }
+            ]
+        },
+        {
+            time: "Mediodía",
+            hours: "13:00 - 15:00",
+            title: "El Esplendor del Skopje Moderno",
+            content: "Cruza el icónico Puente de Piedra para descubrir la cara moderna y grandiosa de la ciudad, un proyecto conocido como 'Skopje 2014'. La historia del terremoto de 1963 es clave para entender su arquitectura actual.",
+            attractions: [
+                { name: "Puente de Piedra", address: "Stone Bridge, Skopje", desc: "El corazón de la ciudad, dominado por la enorme estatua 'Guerrero a Caballo' y rodeado de edificios neoclásicos." },
+                { name: "Plaza de Macedonia", address: "Macedonia Square, Skopje", desc: "El corazón de la ciudad, dominado por la enorme estatua 'Guerrero a Caballo' y rodeado de edificios neoclásicos." },
+                { name: "Casa Memorial de la Madre Teresa", address: "Mother Teresa Memorial House, Skopje", desc: "Un homenaje a la ciudadana más famosa de Skopje. La entrada es gratuita." },
+                { name: "Museo de la Ciudad de Skopje", address: "Museum of the City of Skopje, Skopje", desc: "Ubicado en la antigua estación de tren, con el reloj parado a las 5:17, la hora del terremoto." }
+            ]
+        },
+        {
+            time: "Tarde",
+            hours: "A partir de las 15:00",
+            title: "Tú Eliges: Cultura o Naturaleza",
+            content: "Para la tarde, puedes elegir entre profundizar en la cultura urbana o escapar al impresionante entorno natural que rodea Skopje. Ambas opciones ofrecen una perspectiva diferente de la región.",
+            options: {
+                a: {
+                    title: "Opción A: Inmersión Cultural",
+                    desc: "Continúa explorando los tesoros culturales de la ciudad.",
+                    attractions: [
+                        { name: "Museo de Arte Contemporáneo", address: "Museum of Contemporary Art, Skopje", desc: "Junto a la Fortaleza de Kale, ofrece arte y bonitas vistas." },
+                        { name: "Iglesia de San Clemente de Ohrid", address: "Church of St. Clement of Ohrid, Skopje", desc: "Una destacada y moderna iglesia ortodoxa de arquitectura única." }
+                    ]
+                },
+                b: {
+                    title: "Opción B: Paseo por el Parque de la Ciudad",
+                    desc: "Disfruta de un relajante paseo por el principal pulmón verde de Skopje, accesible a pie.",
+                    attractions: [
+                        { name: "Parque de la Ciudad (Gradski Park)", address: "Gradski Park, Skopje", desc: "Un gran parque urbano ideal para pasear, relajarse y disfrutar del aire libre." }
+                    ]
+                }
+            }
+        }
+    ];
+
+    const tabNoche = document.getElementById('tab-noche');
+    const tabDia = document.getElementById('tab-dia');
+    const contentNoche = document.getElementById('content-noche');
+    const contentDia = document.getElementById('content-dia');
+    const dinnerCardsContainer = document.getElementById('dinner-cards');
+    const nightlifeCardsContainer = document.getElementById('nightlife-cards');
+    const dinnerFilters = document.getElementById('dinner-filters');
+    const nightlifeFilters = document.getElementById('nightlife-filters');
+    const timelineContainer = document.getElementById('timeline-container');
+    const tipsHeader = document.getElementById('tips-header');
+    const tipsContent = document.getElementById('tips-content');
+    const tipsIcon = document.getElementById('tips-icon');
+    const generateRouteBtn = document.getElementById('generate-route-btn');
+
+
+    function createCard(item) {
+        const googleMapsLink = `https://www.google.com/maps/dir/${encodeURIComponent(mikitosHostelAddress)}/${encodeURIComponent(item.name + ', ' + item.neighborhood + ', Skopje')}/data=!4m2!4m1!3e2`; // !3e2 for walking directions
+        return `
+            <div class="bg-white rounded-lg shadow-md p-6 border-t-4 border-teal-500 transform hover:scale-105 transition-transform duration-300">
+                <h4 class="text-xl font-bold mb-2">${item.name}</h4>
+                <p class="text-stone-600 mb-3"><span class="font-semibold">Ambiente:</span> ${item.mood}</p>
+                <p class="text-stone-700 mb-4">${item.highlight}</p>
+                <div class="flex justify-between items-center">
+                    <div class="text-sm text-teal-700 font-semibold">${item.neighborhood}</div>
+                    <a href="${googleMapsLink}" target="_blank" class="bg-teal-600 hover:bg-teal-700 text-white text-sm px-3 py-1 rounded-full flex items-center">
+                        <span class="mr-1">🚶</span> Ruta
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderCards(container, data, filter) {
+        container.innerHTML = '';
+        const filteredData = filter === 'all' ? data : data.filter(item => item.category === filter);
+        filteredData.forEach(item => {
+            container.innerHTML += createCard(item);
+        });
+    }
+
+    function setupFiltering(filterContainer, cardContainer, data) {
+        filterContainer.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                const filter = e.target.dataset.filter;
+                renderCards(cardContainer, data, filter);
+
+                filterContainer.querySelectorAll('button').forEach(btn => btn.classList.remove('filter-active'));
+                e.target.classList.add('filter-active');
+            }
+        });
+    }
+
+    tabNoche.addEventListener('click', () => {
+        contentNoche.classList.remove('hidden');
+        contentDia.classList.add('hidden');
+        tabNoche.classList.add('tab-active');
+        tabDia.classList.remove('tab-active');
+    });
+
+    tabDia.addEventListener('click', () => {
+        contentDia.classList.remove('hidden');
+        contentNoche.classList.add('hidden');
+        tabDia.classList.add('tab-active');
+        tabNoche.classList.remove('tab-active');
+    });
+
+    function renderDayTrip() {
+        timelineContainer.innerHTML = '';
+        dayTripData.forEach((item, index) => {
+            let attractionsHtml = '';
+            if (item.attractions) {
+                attractionsHtml = item.attractions.map(attr => `<li class="mb-2"><strong class="font-semibold text-teal-800">${attr.name}:</strong> ${attr.desc}</li>`).join('');
+            }
+
+            let optionsHtml = '';
+            if (item.options) {
+                optionsHtml = `
+                    <div class="mt-4 pt-4 border-t border-stone-200">
+                        <p class="font-semibold mb-2">¿Qué prefieres para la tarde?</p>
+                        <div class="flex gap-4 mb-2">
+                            <button class="select-option-btn px-4 py-2 rounded-lg bg-teal-200 text-teal-800 hover:bg-teal-300 transition ${selectedDayOption === 'a' ? 'bg-teal-600 text-white hover:bg-teal-700' : ''}" data-option="a">Opción A: Cultura</button>
+                            <button class="select-option-btn px-4 py-2 rounded-lg bg-orange-200 text-orange-800 hover:bg-orange-300 transition ${selectedDayOption === 'b' ? 'bg-orange-600 text-white hover:bg-orange-700' : ''}" data-option="b">Opción B: Naturaleza</button>
+                        </div>
+                        <p id="selected-option-display-${index}" class="mt-2 text-sm text-stone-600">Opción seleccionada: ${selectedDayOption === 'a' ? 'Cultura' : 'Naturaleza'}</p>
+                    </div>
+                `;
+            }
+
+            timelineContainer.innerHTML += `
+                <div class="mb-8 relative timeline-item cursor-pointer">
+                    <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                         <div class="flex items-center mb-2">
+                            <span class="text-sm font-bold bg-teal-100 text-teal-800 py-1 px-3 rounded-full">${item.hours}</span>
+                        </div>
+                        <h4 class="text-2xl font-bold mb-2">${item.title}</h4>
+                        <p class="text-stone-600 mb-4">${item.content}</p>
+                        <div class="details hidden">
+                            <ul class="list-none space-y-2 mt-4 text-stone-700">
+                                ${attractionsHtml}
+                            </ul>
+                            ${optionsHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        document.querySelectorAll('.timeline-item').forEach(item => {
+            item.addEventListener('click', (event) => {
+                // Prevent toggling details when clicking on option buttons
+                if (event.target.classList.contains('select-option-btn')) {
+                    return;
+                }
+                const details = item.querySelector('.details');
+                if (details) {
+                    details.classList.toggle('hidden');
+                }
+            });
+        });
+
+        document.querySelectorAll('.select-option-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const newOption = e.target.dataset.option;
+                selectedDayOption = newOption;
+                document.querySelectorAll('.select-option-btn').forEach(btn => {
+                    btn.classList.remove('bg-teal-600', 'text-white', 'hover:bg-teal-700', 'bg-orange-600', 'hover:bg-orange-700');
+                    if (btn.dataset.option === 'a') {
+                         btn.classList.add('bg-teal-200', 'text-teal-800', 'hover:bg-teal-300');
+                    } else {
+                        btn.classList.add('bg-orange-200', 'text-orange-800', 'hover:bg-orange-300');
+                    }
+                });
+                e.target.classList.remove('bg-teal-200', 'text-teal-800', 'hover:bg-teal-300', 'bg-orange-200', 'text-orange-800', 'hover:bg-orange-300');
+                if (newOption === 'a') {
+                    e.target.classList.add('bg-teal-600', 'text-white', 'hover:bg-teal-700');
+                } else {
+                    e.target.classList.add('bg-orange-600', 'text-white', 'hover:bg-orange-700');
+                }
+
+                const displayElement = e.target.closest('.timeline-item').querySelector('[id^="selected-option-display-"]');
+                if (displayElement) {
+                    displayElement.textContent = `Opción seleccionada: ${newOption === 'a' ? 'Cultura' : 'Naturaleza'}`;
+                }
+            });
+        });
+        // Initial state for the option buttons
+        const initialOptionButton = document.querySelector(`.select-option-btn[data-option="${selectedDayOption}"]`);
+        if (initialOptionButton) {
+            initialOptionButton.classList.remove('bg-teal-200', 'text-teal-800', 'hover:bg-teal-300', 'bg-orange-200', 'text-orange-800', 'hover:bg-orange-300');
+            if (selectedDayOption === 'a') {
+                initialOptionButton.classList.add('bg-teal-600', 'text-white', 'hover:bg-teal-700');
+            } else {
+                initialOptionButton.classList.add('bg-orange-600', 'text-white', 'hover:bg-orange-700');
+            }
+        }
+    }
+
+    tipsHeader.addEventListener('click', () => {
+        const isExpanded = tipsContent.style.maxHeight;
+        if (isExpanded) {
+            tipsContent.style.maxHeight = null;
+            tipsIcon.style.transform = 'rotate(0deg)';
+        } else {
+            tipsContent.style.maxHeight = tipsContent.scrollHeight + "px";
+            tipsIcon.style.transform = 'rotate(180deg)';
+        }
+    });
+
+    function initChart() {
+        const ctx = document.getElementById('day-chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Histórico', 'Moderno', 'Opcional (Cultura/Naturaleza)'],
+                datasets: [{
+                    label: 'Distribución del Día',
+                    data: [4, 2, 4],
+                    backgroundColor: [
+                        '#0d9488', // teal-600
+                        '#ea580c', // orange-600
+                        '#a1a1aa'  // stone-400
+                    ],
+                    borderColor: '#ffffff',
+                    borderWidth: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += `${context.parsed} horas (aprox.)`;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    }
+
+    generateRouteBtn.addEventListener('click', () => {
+        let routePoints = [mikitosHostelAddress];
+
+        // Add attractions from "El Corazón Histórico" (Mañana)
+        dayTripData[0].attractions.forEach(attr => {
+            routePoints.push(attr.address || (attr.name + ', Skopje'));
+        });
+
+        // Add attractions from "El Esplendor del Skopje Moderno" (Mediodía)
+        dayTripData[1].attractions.forEach(attr => {
+            routePoints.push(attr.address || (attr.name + ', Skopje'));
+        });
+
+        // Add attractions from the selected "Tarde" option
+        const afternoonOptions = dayTripData[2].options;
+        if (selectedDayOption === 'a' && afternoonOptions.a) {
+            afternoonOptions.a.attractions.forEach(attr => {
+                routePoints.push(attr.address || (attr.name + ', Skopje'));
+            });
+        } else if (selectedDayOption === 'b' && afternoonOptions.b) {
+            afternoonOptions.b.attractions.forEach(attr => {
+                routePoints.push(attr.address || (attr.name + ', Skopje'));
+            });
+        }
+
+        routePoints.push(mikitosHostelAddress); // End route back at Mikitos Hostel
+
+        const googleMapsFullRouteLink = `https://www.google.com/maps/dir/${routePoints.map(p => encodeURIComponent(p)).join('/')}/data=!4m2!4m1!3e2`; // !3e2 for walking
+        window.open(googleMapsFullRouteLink, '_blank');
+    });
+
+    renderCards(dinnerCardsContainer, dinnerData, 'all');
+    renderCards(nightlifeCardsContainer, nightlifeData, 'all');
+    setupFiltering(dinnerFilters, dinnerCardsContainer, dinnerData);
+    setupFiltering(nightlifeFilters, nightlifeCardsContainer, nightlifeData);
+    renderDayTrip();
+    initChart();
+});
+</script>
+
+</body>
+</html>
